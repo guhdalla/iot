@@ -1,7 +1,9 @@
-package com.fiap.iot.mqtt;
+package com.fiap.iot.config.mqtt;
 
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import java.util.UUID;
+
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -18,8 +20,7 @@ import lombok.NoArgsConstructor;
 public class MqttConnection {
 
 	private String broker = "tcp://broker.hivemq.com:1883";
-	private String clientId = "clientId-service";
-	private MqttClient client;
+	public MqttAsyncClient client;
 	private static MqttConnection instance;
 
 	public void connectMqtt() {
@@ -27,19 +28,16 @@ public class MqttConnection {
 		MemoryPersistence persistence = new MemoryPersistence();
 
 		try {
-			System.out.println(persistence);
-			client = new MqttClient(broker, clientId, persistence);
+			client = new MqttAsyncClient(broker, UUID.randomUUID().toString(), persistence);
 
-			MqttConnectOptions connOpts = new MqttConnectOptions();
-//			connOpts.setUserName("emqx_test");
-//			connOpts.setPassword("emqx_test_password".toCharArray());
-			connOpts.setCleanSession(true);
-
-			client.setCallback(new OnMessageCallback());
-
-			System.out.println("Connecting to broker: " + broker);
-			client.connect(connOpts);
-			System.out.println("Connected");
+			OnMessageCallback myCallBack = new OnMessageCallback();
+			client.setCallback(myCallBack);
+			
+			IMqttToken token = client.connect();
+			token.waitForCompletion();
+			
+			System.out.println("Connected MQTT");
+			sub("bgmbnewgen8462/iot", 0);
 
 		} catch (MqttException me) {
 			System.out.println("reason " + me.getReasonCode());
